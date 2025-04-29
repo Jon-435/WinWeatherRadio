@@ -21,7 +21,13 @@ from EAS2Text import EAS2Text
 callsign = "JON435  "
 pretone_file = "pretone.wav"
 use_pretone = True
-pretone_volume = -0.5
+pretone_volume = -0.1
+
+# Filter Settings
+relay_alerts_for_any_lcoation = False
+# Below is an array of FIPS code. For example, if the array looked like this: ["027007", "027057"], alerts ONLY containing the FIPS codes for Beltrami, MN and Hubbard, MN will be relayed.
+# All other alerts will be ignored. Note if relay_alerts_for_any_lcoation is set to true, this is ignored
+allowed_fips = []
 
 # Do NOT touch anything below here, unless there is something really wrong
 chunk_size = 4000
@@ -185,15 +191,22 @@ def monitor_samedec(device_name, monitor_num):
         if "ZCZC-" in line:
             header = line.replace("EAS: ", "")
             alert_hash = md5(header.encode()).hexdigest()
-            if alert_hash not in relayed_alerts:
+            start = header.find("-") + 1
+            end = header.find("+", start)
+            header_fips = header[start:end].split("-")
+
+            if (alert_hash not in relayed_alerts) and (relay_alerts_for_any_lcoation or any(fips in allowed_fips for fips in header_fips)):
                 relayed_alerts.append(alert_hash)
-                print(f"[Monitor {monitor_num}] SAME Header detected: {header}")
+                print(f"[Monitor {monitor_num}] SAME Header detected: '{header}' - Alert meets the criteria to be relayed!")
                 decoded = EAS2Text(header)
+                print(f"[Monitor {monitor_num}] Recording Alert!")
                 recording = True
                 recorded_audio = np.empty(0, dtype=np.int16)
-
                 current_alert = ActiveAlert(header, decoded.EASText, monitor_num, recorded_audio)
                 alert_queue.put(current_alert)
+            else:
+                print(f"[Monitor {monitor_num}] SAME Header detected: '{header}' - Alert already heard or not in allowed FIPS array.")
+                decoded = EAS2Text(header)
         elif "NNNN" in line and current_alert:
             print(f"[Monitor {monitor_num}] EOM Detected.")
             recording = False
@@ -203,7 +216,7 @@ def monitor_samedec(device_name, monitor_num):
             current_alert = None
 
 def main():
-    parser = argparse.ArgumentParser(description="Weather Radio Live Patch")
+    parser = argparse.ArgumentParser(description="WinWeatherRadio")
     parser.add_argument("-s", "--soundcard", action="append", required=True, help="Soundcard input device name")
     args = parser.parse_args()
     if callsign:
