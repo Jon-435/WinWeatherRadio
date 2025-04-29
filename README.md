@@ -25,3 +25,6 @@ This system is written for a Windows-based system, however it could be ported ov
 Install with:
 
 ```pip install numpy pyaudio pyttsx3 pydub EASGen EAS2Text```
+
+### Legal Disclaimer
+While this code has been thoroughly tested, ALWAYS have a backup method of receiving alerts (Another NOAA Weather Radio, smartphone with Wireless Emergency Alerts, etc.). I am not responsible for any damages caused due to software bugs or glitches or non-relayed alerts.
