@@ -120,16 +120,12 @@ def process_alert_queue():
         if not alert_queue.empty():
             alert = alert_queue.get()
             print(f"--- Processing alert from Monitor {alert.monitor_num} ---")
-
             play_pretone_and_tts(alert)
-
             print(f"[Monitor {alert.monitor_num}] Waiting for EOM and pretone to finish...")
             alert.pretone_done.wait()
             alert.eom_received.wait()
-
             print(f"[Monitor {alert.monitor_num}] Starting alert playback...")
             encode_and_play(alert.header, alert.recorded_audio)
-
             print(f"[Monitor {alert.monitor_num}] Finished playback, waiting 2 seconds...")
             time.sleep(2)
         else:
