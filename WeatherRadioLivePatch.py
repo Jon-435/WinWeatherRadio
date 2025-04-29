@@ -1,3 +1,4 @@
+#Python Imports
 import subprocess
 import threading
 import queue
@@ -22,11 +23,9 @@ pretone_file = "pretone.wav"
 use_pretone = True
 pretone_volume = -0.5
 
-# Audio Settings
+# Do NOT touch anything below here, unless there is something really wrong
 chunk_size = 4000
 sample_rate = 24000
-
-# Global State
 converter = pyttsx3.init()
 converter.setProperty('rate', 135)
 converter.setProperty('volume', 0.95)
@@ -56,7 +55,6 @@ def play_audio_segment_live(audio_segment):
     chunk = 1024
     for i in range(0, len(raw_data), chunk):
         stream.write(raw_data[i:i + chunk])
-
     stream.stop_stream()
     stream.close()
     p.terminate()
@@ -98,20 +96,16 @@ def play_pretone_and_tts(alert_obj):
         ]
         subprocess.run(ffmpeg_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         os.remove(f"{tts_file}.mp3")
-
         pretone = AudioSegment.from_wav(pretone_file) + pretone_volume
         print(f"[Monitor {alert_obj.monitor_num}] Playing pretone...")
         play_audio_segment_live(pretone)
         play_audio_segment_live(pretone)
-
         tts_wav = AudioSegment.from_wav(f"{tts_file}.wav")
         print(f"[Monitor {alert_obj.monitor_num}] Playing TTS announcement...")
         play_audio_segment_live(tts_wav)
         print(f"[Monitor {alert_obj.monitor_num}] TTS done.")
-
         os.remove(f"{tts_file}.wav")
         alert_obj.pretone_done.set()
-
     except Exception as e:
         print(f"Error with TTS: {e}")
 
@@ -161,7 +155,6 @@ def monitor_samedec(device_name, monitor_num):
         bufsize=0
     )
     print(f"[Monitor {monitor_num}] Monitoring audio for EAS SAME headers...")
-
     recording = False
     recorded_audio = np.empty(0, dtype=np.int16)
     current_alert = None
@@ -183,15 +176,12 @@ def monitor_samedec(device_name, monitor_num):
             samples = np.frombuffer(data, dtype=np.int16)
             if recording and current_alert:
                 recorded_audio = np.append(recorded_audio, samples)
-
     threading.Thread(target=feed_audio_to_samedec, daemon=True).start()
-
     while True:
         line = samedec_process.stdout.readline()
         if not line:
             break
         line = line.decode(errors="ignore").strip()
-
         if "ZCZC-" in line:
             header = line.replace("EAS: ", "")
             alert_hash = md5(header.encode()).hexdigest()
@@ -204,7 +194,6 @@ def monitor_samedec(device_name, monitor_num):
 
                 current_alert = ActiveAlert(header, decoded.EASText, monitor_num, recorded_audio)
                 alert_queue.put(current_alert)
-
         elif "NNNN" in line and current_alert:
             print(f"[Monitor {monitor_num}] EOM Detected.")
             recording = False
@@ -217,7 +206,6 @@ def main():
     parser = argparse.ArgumentParser(description="Weather Radio Live Patch")
     parser.add_argument("-s", "--soundcard", action="append", required=True, help="Soundcard input device name")
     args = parser.parse_args()
-
     if callsign:
         if len(callsign) != 8:
             print("Callsign must be exactly 8 characters long. Exiting.")
@@ -227,12 +215,9 @@ def main():
                 print("Callsign invalid. Exiting.")
                 return
         print(f"Callsign is valid: {callsign}")
-
     threading.Thread(target=process_alert_queue, daemon=True).start()
-
     for idx, device_name in enumerate(args.soundcard, start=1):
         threading.Thread(target=monitor_samedec, args=(device_name, idx), daemon=True).start()
-
     while True:
         time.sleep(1)
 
