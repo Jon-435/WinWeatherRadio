@@ -24,9 +24,10 @@ use_pretone = True
 pretone_volume = -0.1
 
 # Filter Settings
-relay_alerts_for_any_lcoation = False
+# Unless you only want to receive alerts for a list of counties, leave this set to True.
+relay_alerts_for_any_lcoation = True
 # Below is an array of FIPS code. For example, if the array looked like this: ["027007", "027057"], alerts ONLY containing the FIPS codes for Beltrami, MN and Hubbard, MN will be relayed.
-# All other alerts will be ignored. Note if relay_alerts_for_any_lcoation is set to true, this is ignored
+# All other alerts will be ignored. Note if relay_alerts_for_any_lcoation is set to true, this is ignored. FIPS codes MUST be strings!
 allowed_fips = []
 
 # Do NOT touch anything below here, unless there is something really wrong
